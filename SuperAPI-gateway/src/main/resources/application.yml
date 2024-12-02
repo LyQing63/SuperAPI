@@ -1,0 +1,49 @@
+# 公共配置文件
+#
+#
+spring:
+  application:
+    name: superapi-gateway
+  # 默认 dev 环境
+  profiles:
+    active: dev
+  # Redis 配置
+  redis:
+    database: 1
+    host: localhost
+    port: 6379
+    timeout: 5000
+  #    password: 123456
+  cloud:
+    service-registry:
+      auto-registration:
+        enabled: true
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Vary Access-Control-Allow-Credentials Access-Control-Allow-Origin, RETAIN_UNIQUE
+        - DedupeResponseHeader=Access-Control-Allow-Origin, RETAIN_FIRST
+      discovery:
+        locator:
+          enabled: true
+          lowerCaseServiceId: true
+      routes:
+        # 平台管理
+        - id: superapi-auth-router
+          uri: http://localhost:8101
+          predicates:
+            - Path=/api/**
+          filters:
+            - StripPrefix=0
+server:
+  address: 0.0.0.0
+  port: 8102
+# knife4j的增强配置，不需要增强可以不配
+knife4j:
+  enable: true
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          gateway: trace

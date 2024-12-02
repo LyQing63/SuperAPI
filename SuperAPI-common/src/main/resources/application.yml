@@ -1,0 +1,20 @@
+# 公共配置文件
+#
+#
+spring:
+  application:
+    name: superapi-common
+  # 默认 dev 环境
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      config:
+        enabled: false
+        refresh-enabled: false
+      discovery:
+        enabled: false
+        register-enabled: false
+# knife4j的增强配置，不需要增强可以不配
+knife4j:
+  enable: true
