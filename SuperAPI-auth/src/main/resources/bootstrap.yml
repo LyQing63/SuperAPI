@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: superapi-auth
+server:
+  port: 8101
+  servlet:
+    context-path: /api
+    session:
+      cookie:
+        max-age: 2592000

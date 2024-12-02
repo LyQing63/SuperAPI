@@ -15,6 +15,9 @@ spring:
     timeout: 5000
   #    password: 123456
   cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
     service-registry:
       auto-registration:
         enabled: true
@@ -29,14 +32,14 @@ spring:
       routes:
         # 平台管理
         - id: superapi-auth-router
-          uri: http://localhost:8101
+          uri: lb://superapi-auth
           predicates:
             - Path=/api/**
           filters:
             - StripPrefix=0
-server:
-  address: 0.0.0.0
-  port: 8102
+#server:
+#  address: 0.0.0.0
+#  port: 8102
 # knife4j的增强配置，不需要增强可以不配
 knife4j:
   enable: true

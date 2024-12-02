@@ -41,18 +41,18 @@ spring:
       # 大小限制
       max-file-size: 10MB
   cloud:
-    service-registry:
-      auto-registration:
-        enabled: true
-server:
-  address: 0.0.0.0
-  port: 8101
-  servlet:
-    context-path: /api
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+#server:
+#  address: 0.0.0.0
+#  port: 8101
+#  servlet:
+#    context-path: /api
     # cookie 30 天过期
-    session:
-      cookie:
-        max-age: 2592000
+#    session:
+#      cookie:
+#        max-age: 2592000
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
