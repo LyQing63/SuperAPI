@@ -17,8 +17,9 @@ public class Code {
     public static final int BAD_LOGIN_TYPE = 40007;  // 登录类型有误
     public static final int WRONG_PASSWORD = 40009;  // 密码有误
     public static final int WRONG_EMAIL = 40008;  // 这个邮箱未注册
-
     public static final int NULL_TOKEN = 40010;  // token为空
+    public static final int NULL_QUERY = 40011;  // 查询请求参数为空
+    public static final int BAD_USER_ID = 40012;  // 没有这个id的用户
 
     public static final int UNAUTHORIZED = 40100;  // 未授权
     public static final int UNAUTHORIZED_USER = 40101;  // 被冻结

@@ -3,7 +3,7 @@ package com.github.lyqing63.superapi.auth.controller;
 import cn.hutool.core.bean.BeanUtil;
 import com.github.lyqing63.superapi.auth.domain.dto.LoginUserDTO;
 import com.github.lyqing63.superapi.auth.domain.dto.RegisterUserDTO;
-import com.github.lyqing63.superapi.auth.domain.vo.LoginVO;
+import com.github.lyqing63.superapi.auth.domain.request.LoginRequest;
 import com.github.lyqing63.superapi.auth.domain.vo.UserVO;
 import com.github.lyqing63.superapi.auth.service.UsersService;
 import com.github.lyqing63.superapi.common.domain.BusinessException;
@@ -45,7 +45,7 @@ public class AuthController {
             throw new BusinessException(Code.NULL_LOGIN_TYPE, "登录类型为空");
         }
 
-        LoginVO loginVO = usersService.login(loginUserVO);
+        LoginRequest loginVO = usersService.login(loginUserVO);
         return Result.success(loginVO);
     }
 
@@ -83,7 +83,7 @@ public class AuthController {
     }
 
     @GetMapping("/info")
-    public Result register(@RequestParam String token) {
+    public Result info(@RequestParam String token) {
 
         // 判断token是否为空
         if (StringUtils.isAnyBlank(token)) {

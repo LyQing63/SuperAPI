@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 @Data
 public class UserVO {
 
-    private String ID;
+    private String id;
     private String username;
     private String avatar;
     private String email;

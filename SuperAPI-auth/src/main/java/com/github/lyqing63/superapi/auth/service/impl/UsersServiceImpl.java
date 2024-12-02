@@ -3,30 +3,38 @@ package com.github.lyqing63.superapi.auth.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateTime;
-import cn.hutool.core.lang.UUID;
 import cn.hutool.jwt.JWT;
 import cn.hutool.jwt.JWTPayload;
 import cn.hutool.jwt.JWTUtil;
 import cn.hutool.jwt.signers.JWTSigner;
 import cn.hutool.jwt.signers.JWTSignerUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.github.lyqing63.superapi.auth.common.LoginType;
+import com.github.lyqing63.superapi.auth.Constant.CommonConstant;
+import com.github.lyqing63.superapi.auth.Constant.LoginType;
 import com.github.lyqing63.superapi.auth.domain.User;
 import com.github.lyqing63.superapi.auth.domain.dto.LoginUserDTO;
 import com.github.lyqing63.superapi.auth.domain.dto.RegisterUserDTO;
-import com.github.lyqing63.superapi.auth.domain.vo.LoginVO;
+import com.github.lyqing63.superapi.auth.domain.request.LoginRequest;
+import com.github.lyqing63.superapi.auth.domain.request.UserQueryRequest;
 import com.github.lyqing63.superapi.auth.domain.vo.UserVO;
 import com.github.lyqing63.superapi.auth.mapper.UsersMapper;
 import com.github.lyqing63.superapi.auth.service.UsersService;
+import com.github.lyqing63.superapi.auth.utils.SqlUtils;
 import com.github.lyqing63.superapi.auth.utils.UserUtils;
 import com.github.lyqing63.superapi.common.domain.BusinessException;
 import com.github.lyqing63.superapi.common.domain.Code;
 import com.github.lyqing63.superapi.utils.utils.PasswordEncoder;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
@@ -56,7 +64,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
     }
 
     @Override
-    public LoginVO login(LoginUserDTO loginUserVO) {
+    public LoginRequest login(LoginUserDTO loginUserVO) {
         String type = loginUserVO.getType();
         User user = null;
         if (LoginType.EMAIL.equals(type)) {
@@ -75,7 +83,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
         user.setLastLoginAt(new Date());
         this.saveOrUpdate(user);
 
-        LoginVO loginVO = new LoginVO();
+        LoginRequest loginVO = new LoginRequest();
         loginVO.setID(user.getId());
         loginVO.setToken(token);
         loginVO.setPhone(user.getPhone());
@@ -94,7 +102,76 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
             throw new BusinessException(Code.TOKEN_NOT_VALIDATE, "token过期");
         }
         String id = jwt.getPayload("ID").toString();
+        return getUserById(id);
+    }
+
+    @Override
+    public IPage<UserVO> getUser(UserQueryRequest userQueryRequest) {
+        if (BeanUtil.isEmpty(userQueryRequest)) {
+            throw new BusinessException(Code.NULL_QUERY, "查询参数为空");
+        }
+        long current = userQueryRequest.getCurrent();
+        long size = userQueryRequest.getPageSize();
+        Page<User> userInfoPage = this.page(new Page<>(current, size),
+                this.getQueryWrapper(userQueryRequest));
+
+        IPage<UserVO> convert = userInfoPage.convert(user -> UserUtils.user2UserVO(user));
+
+        return convert;
+    }
+
+    @Override
+    public IPage<UserVO> getUserByBalance(BigDecimal num) {
+        return null;
+    }
+
+    private QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest) {
+
+
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        if (userQueryRequest == null) {
+            return queryWrapper;
+        }
+
+        String id = userQueryRequest.getId();
+        String username = userQueryRequest.getUsername();
+        String email = userQueryRequest.getEmail();
+        String phone = userQueryRequest.getPhone();
+        BigDecimal balance = userQueryRequest.getBalance();
+        int current = userQueryRequest.getCurrent();
+        int pageSize = userQueryRequest.getPageSize();
+        String sortField = userQueryRequest.getSortField();
+        String sortOrder = userQueryRequest.getSortOrder();
+
+        // 拼接查询条件
+//        if (StringUtils.isNotBlank(searchText)) {
+//            queryWrapper.and(qw -> qw.like("title", searchText).or().like("content", searchText));
+//        }
+        queryWrapper.like(StringUtils.isNotBlank(id), "id", id);
+        queryWrapper.like(StringUtils.isNotBlank(username), "username", username);
+        queryWrapper.like(StringUtils.isNotBlank(email), "requestHeader", email);
+        queryWrapper.like(StringUtils.isNotBlank(phone), "responseHeader", phone);
+//        if (CollUtil.isNotEmpty(tagList)) {
+//            for (String tag : tagList) {
+//                queryWrapper.like("tags", "\"" + tag + "\"");
+//            }
+//        }
+//        queryWrapper.ne(ObjectUtils.isNotEmpty(notId), "id", notId);
+
+        queryWrapper.eq(ObjectUtils.isNotEmpty(balance), "balance", balance);
+        queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
+                sortField);
+
+        return queryWrapper;
+    }
+
+    public UserVO getUserById(String id) {
         User user = usersMapper.selectById(id);
+
+        if (BeanUtil.isEmpty(user)) {
+            throw new BusinessException(Code.BAD_USER_ID, "没有该ID的用户");
+        }
+
         UserVO userVO = UserUtils.user2UserVO(user);
         return userVO;
     }

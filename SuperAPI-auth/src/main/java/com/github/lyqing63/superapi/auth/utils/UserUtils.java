@@ -10,7 +10,7 @@ public class UserUtils {
 
     public static UserVO user2UserVO(User user) {
         UserVO userVO = new UserVO();
-        userVO.setID(user.getId());
+        userVO.setId(user.getId());
         userVO.setUsername(user.getUsername());
         userVO.setAvatar(user.getAvatar());
         userVO.setEmail(user.getEmail());
