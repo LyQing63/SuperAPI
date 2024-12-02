@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.jwt.JWT;
 import cn.hutool.jwt.JWTPayload;
 import cn.hutool.jwt.JWTUtil;
 import cn.hutool.jwt.signers.JWTSigner;
@@ -14,8 +15,10 @@ import com.github.lyqing63.superapi.auth.domain.User;
 import com.github.lyqing63.superapi.auth.domain.dto.LoginUserDTO;
 import com.github.lyqing63.superapi.auth.domain.dto.RegisterUserDTO;
 import com.github.lyqing63.superapi.auth.domain.vo.LoginVO;
+import com.github.lyqing63.superapi.auth.domain.vo.UserVO;
 import com.github.lyqing63.superapi.auth.mapper.UsersMapper;
 import com.github.lyqing63.superapi.auth.service.UsersService;
+import com.github.lyqing63.superapi.auth.utils.UserUtils;
 import com.github.lyqing63.superapi.common.domain.BusinessException;
 import com.github.lyqing63.superapi.common.domain.Code;
 import com.github.lyqing63.superapi.utils.utils.PasswordEncoder;
@@ -48,7 +51,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
 
     @Override
     public Boolean register(RegisterUserDTO registerUserVO) {
-        int res = usersMapper.insert(registerUserVO2Users(registerUserVO));
+        int res = usersMapper.insert(UserUtils.registerUserVO2Users(registerUserVO));
         return res > 0;
     }
 
@@ -79,6 +82,21 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
         loginVO.setEmail(user.getEmail());
         loginVO.setBalance(user.getBalance());
         return loginVO;
+    }
+
+    @Override
+    public UserVO getLoginUser(String token) {
+
+        JWT jwt = JWTUtil.parseToken(token);
+        // 判断token是否过期
+        boolean validate = jwt.validate(0);
+        if (!validate) {
+            throw new BusinessException(Code.TOKEN_NOT_VALIDATE, "token过期");
+        }
+        String id = jwt.getPayload("ID").toString();
+        User user = usersMapper.selectById(id);
+        UserVO userVO = UserUtils.user2UserVO(user);
+        return userVO;
     }
 
     private String createToken(User user) {
@@ -133,25 +151,9 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
         return user;
     }
 
-    /**
-     * 将RegisterUserVO转化未User
-     *
-     * @param registerUserVO
-     * @return User
-     */
-    private User registerUserVO2Users(RegisterUserDTO registerUserVO) {
-        // 通过使用UUID来构建userid字段，防止多个数据库
-        String id = UUID.randomUUID().toString();
-        User user = new User();
-        user.setId(id);
-        user.setUsername(registerUserVO.getUsername());
-        // 加密密码
-        String encodePassword = PasswordEncoder.encode(registerUserVO.getPassword());
-        user.setPassword(encodePassword);
-        user.setEmail(registerUserVO.getEmail());
-        user.setPhone(registerUserVO.getPhone());
-        return user;
-    }
+
+
+
 
 }
 

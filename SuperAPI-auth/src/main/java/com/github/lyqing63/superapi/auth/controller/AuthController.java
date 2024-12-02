@@ -1,19 +1,17 @@
 package com.github.lyqing63.superapi.auth.controller;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.github.lyqing63.superapi.auth.domain.vo.LoginVO;
-import com.github.lyqing63.superapi.auth.service.UsersService;
 import com.github.lyqing63.superapi.auth.domain.dto.LoginUserDTO;
 import com.github.lyqing63.superapi.auth.domain.dto.RegisterUserDTO;
+import com.github.lyqing63.superapi.auth.domain.vo.LoginVO;
+import com.github.lyqing63.superapi.auth.domain.vo.UserVO;
+import com.github.lyqing63.superapi.auth.service.UsersService;
 import com.github.lyqing63.superapi.common.domain.BusinessException;
 import com.github.lyqing63.superapi.common.domain.Code;
 import com.github.lyqing63.superapi.common.domain.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
@@ -82,6 +80,19 @@ public class AuthController {
         usersService.register(registerUserVO);
 
         return Result.success("注册成功!");
+    }
+
+    @GetMapping("/info")
+    public Result register(@RequestParam String token) {
+
+        // 判断token是否为空
+        if (StringUtils.isAnyBlank(token)) {
+            throw new BusinessException(Code.NULL_TOKEN, "token为空");
+        }
+
+        UserVO loginUser = usersService.getLoginUser(token);
+
+        return Result.success(loginUser);
     }
 
 }

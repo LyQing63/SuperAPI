@@ -1,6 +1,5 @@
 package com.github.lyqing63.superapi.utils.utils;
 
-import cn.hutool.core.codec.Base64;
 import cn.hutool.crypto.Mode;
 import cn.hutool.crypto.Padding;
 import cn.hutool.crypto.symmetric.AES;

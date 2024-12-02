@@ -18,10 +18,13 @@ public class Code {
     public static final int WRONG_PASSWORD = 40009;  // 密码有误
     public static final int WRONG_EMAIL = 40008;  // 这个邮箱未注册
 
+    public static final int NULL_TOKEN = 40010;  // token为空
+
     public static final int UNAUTHORIZED = 40100;  // 未授权
     public static final int UNAUTHORIZED_USER = 40101;  // 被冻结
 
-    public static final int FORBIDDEN = 403;     // 禁止访问
+    public static final int FORBIDDEN = 40300;     // 禁止访问
+    public static final int TOKEN_NOT_VALIDATE = 40301;     // token过期
     public static final int NOT_FOUND = 404;     // 资源未找到
     public static final int BAD_REQUEST = 400;   // 错误请求
     public static final int VALIDATION_ERROR = 422; // 验证失败

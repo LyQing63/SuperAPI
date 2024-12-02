@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.github.lyqing63.superapi.auth.domain.dto.LoginUserDTO;
 import com.github.lyqing63.superapi.auth.domain.dto.RegisterUserDTO;
 import com.github.lyqing63.superapi.auth.domain.vo.LoginVO;
+import com.github.lyqing63.superapi.auth.domain.vo.UserVO;
 
 /**
 * @author yjxx_2022
@@ -16,5 +17,7 @@ public interface UsersService extends IService<User> {
     Boolean register(RegisterUserDTO registerUserVO);
 
     LoginVO login(LoginUserDTO loginUserVO);
+
+    UserVO getLoginUser(String token);
 
 }
