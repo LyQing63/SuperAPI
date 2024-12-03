@@ -8,6 +8,8 @@ import cn.hutool.jwt.JWTPayload;
 import cn.hutool.jwt.JWTUtil;
 import cn.hutool.jwt.signers.JWTSigner;
 import cn.hutool.jwt.signers.JWTSignerUtil;
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -58,13 +60,19 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
     private RedisTemplate<String, String> redisTemplate;
 
     @Override
+    @SentinelResource(value = "register", fallback = "fallbackMethod")
     public Boolean register(RegisterUserDTO registerUserVO) {
         int res = usersMapper.insert(UserUtils.registerUserVO2Users(registerUserVO));
         return res > 0;
     }
 
     @Override
+    @SentinelResource("login")
     public LoginRequest login(LoginUserDTO loginUserVO) {
+        // 查看是否登录
+        ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
+
+
         String type = loginUserVO.getType();
         User user = null;
         if (LoginType.EMAIL.equals(type)) {
@@ -79,6 +87,11 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
 
         //使用jwt工具生成token
         String token = createToken(user);
+        // 存入分布式redis中
+        valueOperations.set("login:"+token, user.getEmail());
+        // 随机，防止缓存雪崩
+        // 随机0-60s
+        redisTemplate.expire("login:"+token, 30 * 24 * 60 * 60 + new Random().nextInt(60), TimeUnit.SECONDS);
         // 成功更新last_login_at字段
         user.setLastLoginAt(new Date());
         this.saveOrUpdate(user);
@@ -188,13 +201,6 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
         JWTSigner jwtSigner = JWTSignerUtil.hs512("lyqing63".getBytes(StandardCharsets.UTF_8));
         String token = JWTUtil.createToken(payload, jwtSigner);
 
-        // 存入分布式redis中
-        ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
-        valueOperations.set("login:"+token, user.getEmail());
-        // 随机，防止缓存雪崩
-        // 随机0-60s
-        redisTemplate.expire("login:"+token, 30 * 24 * 60 * 60 + new Random().nextInt(60), TimeUnit.SECONDS);
-
         return token;
     }
 
@@ -230,6 +236,15 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
 
 
 
+    // 请求被限流时的处理方法
+    public String blockHandler(BlockException exception) {
+        return "Request blocked due to traffic control!";
+    }
+
+    // 熔断降级方法
+    public String fallbackMethod() {
+        return "Fallback response due to error!";
+    }
 
 
 }

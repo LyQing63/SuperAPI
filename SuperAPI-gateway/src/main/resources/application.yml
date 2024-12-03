@@ -34,7 +34,7 @@ spring:
         - id: superapi-auth-router
           uri: lb://superapi-auth
           predicates:
-            - Path=/api/**
+            - Path=/**
           filters:
             - StripPrefix=0
 #server:

@@ -41,6 +41,9 @@ spring:
       # 大小限制
       max-file-size: 10MB
   cloud:
+    sentinel:
+      transport:
+        dashboard: localhost:8080
     nacos:
       discovery:
         server-addr: localhost:8848
