@@ -1,18 +1,18 @@
 package com.github.lyqing63.superapi.auth.controller;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.github.lyqing63.superapi.auth.domain.request.UpdateUserRequest;
 import com.github.lyqing63.superapi.auth.domain.request.UserQueryRequest;
 import com.github.lyqing63.superapi.auth.domain.vo.UserVO;
 import com.github.lyqing63.superapi.auth.service.UsersService;
-import com.github.lyqing63.superapi.common.domain.BusinessException;
-import com.github.lyqing63.superapi.common.domain.Code;
 import com.github.lyqing63.superapi.common.domain.Result;
-import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.math.BigDecimal;
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/user")
@@ -22,23 +22,15 @@ public class UserController {
     private UsersService usersService;
 
     @PostMapping ("/query")
-    public Result getUserById(@RequestBody UserQueryRequest userQueryRequest) {
-
-        if (BeanUtil.isEmpty(userQueryRequest)) {
-            throw new BusinessException(Code.NULL_QUERY, "查询参数为空");
-        }
-
+    public Result getUserById(@Valid @RequestBody UserQueryRequest userQueryRequest) {
         IPage<UserVO> user = usersService.getUser(userQueryRequest);
         return Result.success(user);
     }
 
-    @PostMapping("/query/balance")
-    public Result getUserById(@RequestBody BigDecimal num) {
-        if (ObjectUtils.isEmpty(num)) {
-            throw new BusinessException(Code.NULL_QUERY, "查询参数为空");
-        }
-        usersService.getUserByBalance(num);
-        return Result.success();
+    @PostMapping("/update")
+    public Result updateUser(@Valid UpdateUserRequest updateUserRequest) {
+        usersService.updateUser(updateUserRequest);
+        return Result.success("更新成功");
     }
 
 

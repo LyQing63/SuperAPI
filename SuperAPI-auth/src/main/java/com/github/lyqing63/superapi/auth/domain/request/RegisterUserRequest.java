@@ -1,13 +1,14 @@
-package com.github.lyqing63.superapi.auth.domain.dto;
+package com.github.lyqing63.superapi.auth.domain.request;
 
 import lombok.Data;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
+import java.io.Serializable;
 
 @Data
-public class RegisterUserDTO {
+public class RegisterUserRequest implements Serializable {
 
     /**
      *
@@ -32,9 +33,8 @@ public class RegisterUserDTO {
     @NotBlank(message = "确认密码不能为空")
     private String confirmPassword;
 
-    /**
-     *
-     */
+    @Size(max = 11, min = 11, message = "不是合法电话号")
     private String phone;
 
+    private static final long serialVersionUID = 1L;
 }

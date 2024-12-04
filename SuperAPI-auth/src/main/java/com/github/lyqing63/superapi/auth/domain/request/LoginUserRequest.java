@@ -1,12 +1,13 @@
-package com.github.lyqing63.superapi.auth.domain.dto;
+package com.github.lyqing63.superapi.auth.domain.request;
 
 import lombok.Data;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import java.io.Serializable;
 
 @Data
-public class LoginUserDTO {
+public class LoginUserRequest implements Serializable {
 
     /**
      *
@@ -24,6 +25,8 @@ public class LoginUserDTO {
     /**
      * 登录类别
      */
+    @NotBlank(message = "请求类型不能为空")
     private String type;
 
+    private static final long serialVersionUID = 1L;
 }
