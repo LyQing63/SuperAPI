@@ -17,10 +17,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.lyqing63.superapi.auth.Constant.CommonConstant;
 import com.github.lyqing63.superapi.auth.Constant.LoginType;
 import com.github.lyqing63.superapi.auth.domain.User;
-import com.github.lyqing63.superapi.auth.domain.dto.LoginUserDTO;
-import com.github.lyqing63.superapi.auth.domain.dto.RegisterUserDTO;
-import com.github.lyqing63.superapi.auth.domain.request.LoginRequest;
-import com.github.lyqing63.superapi.auth.domain.request.UserQueryRequest;
+import com.github.lyqing63.superapi.auth.domain.request.*;
+import com.github.lyqing63.superapi.auth.domain.vo.LoginVO;
 import com.github.lyqing63.superapi.auth.domain.vo.UserVO;
 import com.github.lyqing63.superapi.auth.mapper.UsersMapper;
 import com.github.lyqing63.superapi.auth.service.UsersService;
@@ -61,17 +59,22 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
 
     @Override
     @SentinelResource(value = "register", fallback = "fallbackMethod")
-    public Boolean register(RegisterUserDTO registerUserVO) {
-        int res = usersMapper.insert(UserUtils.registerUserVO2Users(registerUserVO));
+    public Boolean register(RegisterUserRequest registerUserVO) {
+
+        // 两次密码输入相同
+        if (!registerUserVO.getPassword().equals(registerUserVO.getConfirmPassword())) {
+            throw new BusinessException(Code.BAD_CONFIRM_PASSWORD, "两次密码输入不相同");
+        }
+
+        int res = usersMapper.insert(UserUtils.registerUserRequest2Users(registerUserVO));
         return res > 0;
     }
 
     @Override
-    @SentinelResource("login")
-    public LoginRequest login(LoginUserDTO loginUserVO) {
+    @SentinelResource(value = "login", fallback = "fallbackMethod")
+    public LoginVO login(LoginUserRequest loginUserVO) {
         // 查看是否登录
         ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
-
 
         String type = loginUserVO.getType();
         User user = null;
@@ -96,7 +99,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
         user.setLastLoginAt(new Date());
         this.saveOrUpdate(user);
 
-        LoginRequest loginVO = new LoginRequest();
+        LoginVO loginVO = new LoginVO();
         loginVO.setID(user.getId());
         loginVO.setToken(token);
         loginVO.setPhone(user.getPhone());
@@ -106,8 +109,8 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
     }
 
     @Override
-    public UserVO getLoginUser(String token) {
-
+    public UserVO getLoginUser(UserInfoRequest userInfoRequest) {
+        String token = userInfoRequest.getToken();
         JWT jwt = JWTUtil.parseToken(token);
         // 判断token是否过期
         boolean validate = jwt.validate(0);
@@ -120,13 +123,10 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
 
     @Override
     public IPage<UserVO> getUser(UserQueryRequest userQueryRequest) {
-        if (BeanUtil.isEmpty(userQueryRequest)) {
-            throw new BusinessException(Code.NULL_QUERY, "查询参数为空");
-        }
         long current = userQueryRequest.getCurrent();
         long size = userQueryRequest.getPageSize();
         Page<User> userInfoPage = this.page(new Page<>(current, size),
-                this.getQueryWrapper(userQueryRequest));
+                this.getUserQueryWrapper(userQueryRequest));
 
         IPage<UserVO> convert = userInfoPage.convert(user -> UserUtils.user2UserVO(user));
 
@@ -134,11 +134,18 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
     }
 
     @Override
-    public IPage<UserVO> getUserByBalance(BigDecimal num) {
-        return null;
+    public Boolean updateUser(UpdateUserRequest updateUserRequest) {
+        // 判断user是否存在
+        String id = updateUserRequest.getId();
+        User user = usersMapper.selectById(id);
+        if (user == null) {
+            throw new BusinessException(Code.BAD_USER_ID, "没有这个id的用户");
+        }
+        User userNew = UserUtils.updateUserRequest2Users(updateUserRequest);
+        return this.save(userNew);
     }
 
-    private QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest) {
+    private QueryWrapper<User> getUserQueryWrapper(UserQueryRequest userQueryRequest) {
 
 
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
@@ -151,8 +158,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
         String email = userQueryRequest.getEmail();
         String phone = userQueryRequest.getPhone();
         BigDecimal balance = userQueryRequest.getBalance();
-        int current = userQueryRequest.getCurrent();
-        int pageSize = userQueryRequest.getPageSize();
+        String type = userQueryRequest.getType();
         String sortField = userQueryRequest.getSortField();
         String sortOrder = userQueryRequest.getSortOrder();
 
@@ -170,8 +176,36 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
 //            }
 //        }
 //        queryWrapper.ne(ObjectUtils.isNotEmpty(notId), "id", notId);
+        switch (type) {
+            case (CommonConstant.EQUAL_TO) : {
+                queryWrapper.eq(ObjectUtils.isNotEmpty(balance), "balance", balance);
+                break;
+            }
+            case (CommonConstant.GREATER_THAN) : {
+                queryWrapper.gt(ObjectUtils.isNotEmpty(balance), "balance", balance);
+                break;
+            }
+            case (CommonConstant.GREATER_THAN_OR_EQUAL) : {
+                queryWrapper.ge(ObjectUtils.isNotEmpty(balance), "balance", balance);
+                break;
+            }
+            case (CommonConstant.LESS_THAN) : {
+                queryWrapper.lt(ObjectUtils.isNotEmpty(balance), "balance", balance);
+                break;
+            }
+            case (CommonConstant.LESS_THAN_OR_EQUAL) : {
+                queryWrapper.le(ObjectUtils.isNotEmpty(balance), "balance", balance);
+                break;
+            }
+            case (CommonConstant.NOT_EQUAL_TO) : {
+                queryWrapper.ne(ObjectUtils.isNotEmpty(balance), "balance", balance);
+                break;
+            }
+            default: {
+                throw new BusinessException(Code.BAD_QUERY_TYPE, "查询请求类型错误");
+            }
+        }
 
-        queryWrapper.eq(ObjectUtils.isNotEmpty(balance), "balance", balance);
         queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
                 sortField);
 
@@ -205,17 +239,17 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, User>
     }
 
 
-    private User loginWithGoogle(LoginUserDTO loginUserVO) {
+    private User loginWithGoogle(LoginUserRequest loginUserVO) {
 //        usersService.loginGoogle(loginUserVO);
         return null;
     }
 
-    private User loginWithGithub(LoginUserDTO loginUserVO) {
+    private User loginWithGithub(LoginUserRequest loginUserVO) {
 //        usersService.loginWithGithub(loginUserVO);
         return null;
     }
 
-    public User loginWithEmail(LoginUserDTO loginUserVO) {
+    public User loginWithEmail(LoginUserRequest loginUserVO) {
         String email = loginUserVO.getEmail();
         User user = lambdaQuery().eq(User::getEmail, email).one();
         if (BeanUtil.isEmpty(user)) {

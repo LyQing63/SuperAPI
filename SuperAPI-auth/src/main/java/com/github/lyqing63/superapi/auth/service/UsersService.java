@@ -3,13 +3,9 @@ package com.github.lyqing63.superapi.auth.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.github.lyqing63.superapi.auth.domain.User;
-import com.github.lyqing63.superapi.auth.domain.dto.LoginUserDTO;
-import com.github.lyqing63.superapi.auth.domain.dto.RegisterUserDTO;
-import com.github.lyqing63.superapi.auth.domain.request.LoginRequest;
-import com.github.lyqing63.superapi.auth.domain.request.UserQueryRequest;
+import com.github.lyqing63.superapi.auth.domain.request.*;
+import com.github.lyqing63.superapi.auth.domain.vo.LoginVO;
 import com.github.lyqing63.superapi.auth.domain.vo.UserVO;
-
-import java.math.BigDecimal;
 
 /**
 * @author yjxx_2022
@@ -18,13 +14,14 @@ import java.math.BigDecimal;
 */
 public interface UsersService extends IService<User> {
 
-    Boolean register(RegisterUserDTO registerUserVO);
+    Boolean register(RegisterUserRequest registerUserVO);
 
-    LoginRequest login(LoginUserDTO loginUserVO);
+    LoginVO login(LoginUserRequest loginUserVO);
 
-    UserVO getLoginUser(String token);
+    UserVO getLoginUser(UserInfoRequest userInfoRequest);
 
     IPage<UserVO> getUser(UserQueryRequest userQueryRequest);
 
-    IPage<UserVO> getUserByBalance(BigDecimal num);
+    Boolean updateUser(UpdateUserRequest updateUserRequest);
+
 }
